@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     )
     MONGO_DATABASE_NAME: str = "CaptionDB"
 
-    RABBITMQ_HOST: str = "localhost"
+    RABBITMQ_HOST: str = "mq"
     RABBITMQ_PORT: int = 5672
     RABBITMQ_DEFAULT_USERNAME: str = "guest"
     RABBITMQ_DEFAULT_PASSWORD: str = "guest"

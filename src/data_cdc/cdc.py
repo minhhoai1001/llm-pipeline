@@ -1,5 +1,4 @@
 import json
-import logging
 
 from bson import json_util
 from data_cdc.config import settings
@@ -8,9 +7,9 @@ from core.mq import publish_to_rabbitmq
 
 def stream_process():
     try:
+        print("Connected to MongoDB.")
         client = MongoDBClient()
         db = client["CaptionDB"]
-        logging.info("Connected to MongoDB.")
 
         # Watch changes in a specific collection
         changes = db.watch([{"$match": {"operationType": {"$in": ["insert"]}}}])
@@ -23,22 +22,22 @@ def stream_process():
             change["fullDocument"]["entry_id"] = entry_id
 
             if data_type not in ["articles", "posts", "repositories"]:
-                logging.info(f"Unsupported data type: '{data_type}'")
+                print(f"Unsupported data type: '{data_type}'")
                 continue
 
             # Use json_util to serialize the document
             data = json.dumps(change["fullDocument"], default=json_util.default)
-            logging.info(
+            print(
                 f"Change detected and serialized for a data sample of type {data_type}."
             )
 
             # Send data to rabbitmq
             publish_to_rabbitmq(queue_name=settings.RABBITMQ_QUEUE_NAME, data=data)
-            logging.info(f"Data of type '{data_type}' published to RabbitMQ.")
+            print(f"Data of type '{data_type}' published to RabbitMQ.")
 
     except Exception as e:
-        logging.error(f"An error occurred: {e}")
-
+        print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
-    stream_process()
+    while True:
+        stream_process()

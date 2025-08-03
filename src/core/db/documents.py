@@ -1,6 +1,5 @@
 import uuid
 import datetime
-import logging
 from typing import List, Optional
 from pydantic import UUID4, BaseModel, ConfigDict, Field
 from pymongo import errors
@@ -41,13 +40,13 @@ class BaseDocument(BaseModel):
         collection = _database[self._get_collection_name()]
         # Check if link exists before inserting
         if hasattr(self, "link") and collection.find_one({"link": self.link}):
-            logging.info("Document with this link already exists. Not inserting.")
+            print("Document with this link already exists. Not inserting.")
             return None
         try:
             result = collection.insert_one(self.to_mongo(**kwargs))
             return result.inserted_id
         except errors.WriteError:
-            logging.exception("Failed to insert document.")
+            print("Failed to insert document.")
             return None
 
     @classmethod
@@ -61,7 +60,7 @@ class BaseDocument(BaseModel):
             new_instance = new_instance.save()
             return new_instance
         except errors.OperationFailure:
-            logging.exception("Failed to retrieve or create document.")
+            print("Failed to retrieve or create document.")
 
             return None
 
@@ -75,7 +74,7 @@ class BaseDocument(BaseModel):
 
             return None
         except errors.OperationFailure:
-            logging.error("Failed to retrieve document")
+            print("Failed to retrieve document")
 
             return None
 
@@ -88,7 +87,7 @@ class BaseDocument(BaseModel):
             )
             return result.inserted_ids
         except errors.WriteError:
-            logging.exception("Failed to insert documents.")
+            print("Failed to insert documents.")
 
             return None
 

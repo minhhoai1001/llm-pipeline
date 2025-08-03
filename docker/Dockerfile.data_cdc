@@ -1,0 +1,14 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir pymongo pika pydantic-settings
+
+# Copy function code
+COPY ./src/data_cdc /app/data_cdc
+COPY ./src/core /app/core
+
+# # Set the CMD to your handler
+CMD ["python", "-m", "data_cdc.cdc"]

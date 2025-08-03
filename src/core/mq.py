@@ -51,7 +51,7 @@ class RabbitMQConnection:
                 )
             )
         except pika.exceptions.AMQPConnectionError as e:
-            logging.exception("Failed to connect to RabbitMQ:")
+            print("Failed to connect to RabbitMQ:")
             if not self.fail_silently:
                 raise e
 
@@ -95,10 +95,9 @@ def publish_to_rabbitmq(queue_name: str, data: str):
                 ),
             )
     except pika.exceptions.UnroutableError:
-        logging.warning("Message could not be routed")
+        print("Message could not be routed")
     except Exception:
-        logging.exception("Error publishing to RabbitMQ.")
-
+        print("Error publishing to RabbitMQ.")
 
 if __name__ == "__main__":
     publish_to_rabbitmq("test_queue", "Hello, World!")
