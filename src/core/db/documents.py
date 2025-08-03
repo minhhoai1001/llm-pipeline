@@ -1,5 +1,6 @@
 import uuid
 import datetime
+import logging
 from typing import List, Optional
 from pydantic import UUID4, BaseModel, ConfigDict, Field
 from pymongo import errors
@@ -10,6 +11,8 @@ _database = mongoClient.get_database("CaptionDB")
 
 class BaseDocument(BaseModel):
     id: UUID4 = Field(default_factory=uuid.uuid4)
+    
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     @classmethod
     def from_mongo(cls, data: dict):
@@ -38,14 +41,13 @@ class BaseDocument(BaseModel):
         collection = _database[self._get_collection_name()]
         # Check if link exists before inserting
         if hasattr(self, "link") and collection.find_one({"link": self.link}):
-            print("Document with this link already exists. Not inserting.")
+            logging.info("Document with this link already exists. Not inserting.")
             return None
         try:
             result = collection.insert_one(self.to_mongo(**kwargs))
             return result.inserted_id
         except errors.WriteError:
-            # logger.exception("Failed to insert document.")
-            print("Failed to insert document.")
+            logging.exception("Failed to insert document.")
             return None
 
     @classmethod
@@ -59,8 +61,7 @@ class BaseDocument(BaseModel):
             new_instance = new_instance.save()
             return new_instance
         except errors.OperationFailure:
-            # logger.exception("Failed to retrieve or create document.")
-            print("Failed to retrieve or create document.")
+            logging.exception("Failed to retrieve or create document.")
 
             return None
 
@@ -74,8 +75,7 @@ class BaseDocument(BaseModel):
 
             return None
         except errors.OperationFailure:
-            # logger.error("Failed to retrieve document")
-            print("Failed to retrieve document")
+            logging.error("Failed to retrieve document")
 
             return None
 
@@ -88,8 +88,7 @@ class BaseDocument(BaseModel):
             )
             return result.inserted_ids
         except errors.WriteError:
-            # logger.exception("Failed to insert documents.")
-            print("Failed to insert documents.")
+            logging.exception("Failed to insert documents.")
 
             return None
 
@@ -97,7 +96,6 @@ class BaseDocument(BaseModel):
     def _get_collection_name(cls):
         if not hasattr(cls, "Settings") or not hasattr(cls.Settings, "name"):
             raise "Document should define an Settings configuration class with the name of the collection."
-
 
         return cls.Settings.name
     

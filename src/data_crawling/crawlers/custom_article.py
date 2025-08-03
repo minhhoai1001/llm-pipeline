@@ -1,14 +1,7 @@
-import re, sys, os
-import asyncio
+import re, sys, os, requests
+from urllib.parse import urlparse
 from newsplease import NewsPlease
-from crawl4ai import (
-    AsyncWebCrawler,
-    BrowserConfig,
-    CrawlerRunConfig,
-    DefaultMarkdownGenerator,
-    PruningContentFilter,
-    CrawlResult
-)
+from bs4 import BeautifulSoup
 
 from .base import BaseCrawler
 from core.db.documents import ArticleDocument
@@ -31,26 +24,31 @@ class NBCNewsCrawler(BaseCrawler):
             links.append(url)
         return links
 
-    async def crawl_links(self, link):
-        browser_config = BrowserConfig(
-            headless=False,
-            verbose=True,
-        )
-        async with AsyncWebCrawler(config=browser_config) as crawler:
-            crawler_config = CrawlerRunConfig(
-                markdown_generator=DefaultMarkdownGenerator(
-                    content_filter=PruningContentFilter()
-                ),
-            )
-            result: CrawlResult = await crawler.arun(
-                url=link, config=crawler_config
-            )
-            
-            links = self.extract_urls(result.markdown)
-            return links
+    def crawl_links(self, link):
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+        }
+        response = requests.get(link, headers=headers)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        links = set()
+        for a in soup.find_all('a', href=True):
+            href = a['href']
+            # Normalize to full URL
+            if '/politics/' in href:
+                if href.startswith("/"):
+                    href = "https://www.nbcnews.com" + href
+                
+                if href.startswith("https://www.nbcnews.com/politics/"):
+                    # Parse path to count segments after "/politics/"
+                    path = urlparse(href).path  # e.g. /politics/white-house
+                    segments = path.strip("/").split("/")  # ['politics', 'white-house']
+
+                    if len(segments) >= 3:
+                        links.add(href)  # only add if looks like a real article
+        return links
         
     def extract(self, link: str, **kwargs) -> None:
-        links = asyncio.run(self.crawl_links(link))
+        links = self.crawl_links(link)
         for url in links:
             try:
                 article = NewsPlease.from_url(url)

@@ -1,3 +1,4 @@
+import logging
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from core.config import settings
@@ -11,11 +12,11 @@ class MongoDBClient:
         if cls._instance is None:
             try:
                 cls._instance = MongoClient(settings.MONGO_DATABASE_HOST)
-                # logger.info(
-                #     f"Connection to database with uri: {settings.MONGO_DATABASE_HOST} successful"
-                # )
+                logging.info(
+                     f"Connection to database with uri: {settings.MONGO_DATABASE_HOST} successful"
+                )
             except ConnectionFailure:
-                # logger.error(f"Couldn't connect to the database.")
+                logging.error(f"Couldn't connect to the database.")
 
                 raise
 
@@ -29,5 +30,6 @@ class MongoDBClient:
     def close(self):
         if self._instance:
             self._instance.close()
+            logging.info("MongoDB connection closed.")
             
 mongoClient = MongoDBClient()
